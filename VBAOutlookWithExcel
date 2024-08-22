@@ -1,0 +1,59 @@
+Sub FilterAndMoveEmails()
+    Dim outlookApp As Outlook.Application
+    Dim inbox As Outlook.Folder
+    Dim testFolder As Outlook.Folder
+    Dim mailItem As Outlook.mailItem
+    Dim items As Outlook.items
+    Dim item As Object
+    Dim excelApp As Object
+    Dim workbook As Object
+    Dim worksheet As Object
+    Dim i As Long
+    Dim dossierNumber As String
+    Dim lastRow As Long
+
+    ' Initialiser Outlook
+    Set outlookApp = Application
+    Set inbox = outlookApp.GetNamespace("MAPI").Folders("Choisir le mail a filtrer").Folders("Boîte de réception")
+    Set testFolder = inbox.Folders("test")
+    Set items = inbox.items
+
+    ' Initialiser Excel
+    Set excelApp = CreateObject("Excel.Application")
+    excelApp.Visible = False
+    Set workbook = excelApp.Workbooks.Open("C:\Users\... votre chemin d'accès vers votre excel")
+    Set worksheet = workbook.Sheets(1)
+
+    ' Obtenir la dernière ligne de la colonne 2 -> a vous de choisir votre colonne
+    lastRow = worksheet.Cells(worksheet.Rows.Count, 2).End(-4162).Row ' -4162 correspond à xlUp
+
+    ' Parcourir les emails
+    For Each item In items
+        If TypeOf item Is Outlook.mailItem Then
+            Set mailItem = item
+            ' Vérifier chaque numéro de dossier dans l'objet de l'email
+            For i = 2 To lastRow
+                dossierNumber = worksheet.Cells(i, 2).Value
+                If InStr(mailItem.Subject, dossierNumber) > 0 Then
+                    ' Déplacer l'email vers le dossier "test -> a changer avec votre nom de dossier"
+                    mailItem.Move testFolder
+                    Exit For
+                End If
+            Next i
+        End If
+    Next item
+
+    ' Fermer le classeur Excel sans sauvegarder
+    workbook.Close False
+    excelApp.Quit
+
+    ' Libérer les objets
+    Set workbook = Nothing
+    Set excelApp = Nothing
+    Set items = Nothing
+    Set inbox = Nothing
+    Set testFolder = Nothing
+    Set outlookApp = Nothing
+
+    MsgBox "Script exécuté avec succès."
+End Sub
